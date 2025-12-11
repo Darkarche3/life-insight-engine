@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from db.base import engine, Base, SessionLocal
@@ -29,15 +29,19 @@ def read_root():
 
 @app.post("/entries", response_model=EntryResponse)
 def api_create_entry(entry: EntryCreate, db: Session = Depends(get_db)):
-    new_entry = create_entry(
-        db=db,
-        content=entry.content,
-        type_=entry.type,
-        tags=entry.tags,
-        sentiment_score=entry.sentiment_score
-    )
+    try:
+        new_entry = create_entry(
+            db=db,
+            content=entry.content,
+            type_=entry.type,
+            tags=entry.tags,
+            sentiment_score=entry.sentiment_score,
+        )
+    except ValueError as e:
+        # Translate business-level error → HTTP 400
+        raise HTTPException(status_code=400, detail=str(e))
 
-    # Convert DB string tags -> list[str] for the response
+    # Convert DB tags string -> list for the response
     tags_list = new_entry.tags.split(",") if new_entry.tags else []
 
     return EntryResponse(
@@ -51,8 +55,14 @@ def api_create_entry(entry: EntryCreate, db: Session = Depends(get_db)):
 
 
 @app.get("/entries", response_model=List[EntryResponse])
-def api_list_entries(db: Session = Depends(get_db)):
-    entries = list_entries(db)
+def api_list_entries(
+    type: str | None = None,
+    limit: int | None = None,
+    db: Session = Depends(get_db)
+):
+    entries = list_entries(db, type_=type, limit=limit)
+
+    # Convert DB string tags -> list[str] for the response
     response_entries = []
     for e in entries:
         tags_list = e.tags.split(",") if e.tags else []

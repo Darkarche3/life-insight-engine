@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from db.models import EntryModel
 
+
 def create_entry(db: Session, content: str, type_: str, tags: list[str], sentiment_score: float = 0.0) -> EntryModel:
     tags_str = ",".join(tags) if tags else ""
     entry = EntryModel(
@@ -16,5 +17,16 @@ def create_entry(db: Session, content: str, type_: str, tags: list[str], sentime
     db.refresh(entry)
     return entry
 
-def list_entries(db: Session) -> List[EntryModel]:
-    return db.query(EntryModel).order_by(EntryModel.timestamp.desc()).all()
+
+def list_entries(db: Session, type_: str | None = None, limit: int | None = None):
+    query = db.query(EntryModel)
+
+    if type_:
+        query = query.filter(EntryModel.type == type_)
+
+    query = query.order_by(EntryModel.timestamp.desc())
+
+    if limit:
+        query = query.limit(limit)
+
+    return query.all()
