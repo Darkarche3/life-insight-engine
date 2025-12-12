@@ -58,11 +58,12 @@ def api_create_entry(entry: EntryCreate, db: Session = Depends(get_db)):
 def api_list_entries(
     type: str | None = None,
     limit: int | None = None,
-    db: Session = Depends(get_db)
+    tag: str | None = None,
+    search: str | None = None,
+    db: Session = Depends(get_db),
 ):
-    entries = list_entries(db, type_=type, limit=limit)
+    entries = list_entries(db, type_=type, limit=limit, tag=tag, search=search)
 
-    # Convert DB string tags -> list[str] for the response
     response_entries = []
     for e in entries:
         tags_list = e.tags.split(",") if e.tags else []

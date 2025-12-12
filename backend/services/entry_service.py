@@ -6,6 +6,7 @@ from repositories.entry_repository import list_entries as repo_list_entries
 
 ALLOWED_TYPES = {"note", "habit", "reflection"}
 
+
 def create_entry(db: Session, content: str, type_: str, tags: list[str], sentiment_score: float = 0.0):
     # 1. Content must not be empty
     if not content or content.strip() == "":
@@ -13,7 +14,8 @@ def create_entry(db: Session, content: str, type_: str, tags: list[str], sentime
 
     # 2. Type must be valid
     if type_ not in ALLOWED_TYPES:
-        raise ValueError(f"Invalid entry type. Must be one of: {', '.join(ALLOWED_TYPES)}")
+        raise ValueError(
+            f"Invalid entry type. Must be one of: {', '.join(ALLOWED_TYPES)}")
 
     # 3. Sentiment must be between 0 and 1
     if not (0.0 <= sentiment_score <= 1.0):
@@ -39,6 +41,11 @@ def create_entry(db: Session, content: str, type_: str, tags: list[str], sentime
     )
 
 
-
-def list_entries(db: Session, type_: str | None = None, limit: int | None = None):
-    return repo_list_entries(db=db, type_=type_, limit=limit)
+def list_entries(
+    db: Session,
+    type_: str | None = None,
+    limit: int | None = None,
+    tag: str | None = None,
+    search: str | None = None,
+):
+    return repo_list_entries(db=db, type_=type_, limit=limit, tag=tag, search=search)
