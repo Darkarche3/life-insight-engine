@@ -1,0 +1,47 @@
+# ========================
+# Python / Backend
+# ========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.log
+
+# Virtual environments
+venv/
+.venv/
+
+# Environment variables
+.env
+
+# SQLite databases
+*.db
+*.sqlite3
+
+# ========================
+# Frontend / React
+# ========================
+frontend/node_modules/
+frontend/dist/
+
+# Frontend env vars
+frontend/.env
+
+# ========================
+# OS / Editor noise
+# ========================
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+
+# IntelliJ / PyCharm
+.idea/
+
+# ========================
+# Misc
+# ========================
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

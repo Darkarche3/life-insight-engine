@@ -23,3 +23,23 @@ Thumbs.db
 build/
 dist/
 *.egg-info/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+.env
+*.log
+
+# SQLite DB (choose one approach)
+life_insights.db
+*.db
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+

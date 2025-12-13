@@ -6,9 +6,18 @@ from db import models
 from services.entry_service import create_entry, list_entries
 from schemas.entry_schema import EntryCreate, EntryResponse
 from typing import List
+from fastapi.middleware.cors import CORSMiddleware
 
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 # This line tells SQLAlchemy to create the tables in the database
 Base.metadata.create_all(bind=engine)
