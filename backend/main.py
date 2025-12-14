@@ -2,11 +2,13 @@ from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from db.base import engine, Base, SessionLocal
-from db import models
+from db.models import EntryModel
 from services.entry_service import create_entry, list_entries
 from schemas.entry_schema import EntryCreate, EntryResponse
 from typing import List
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import func
+from datetime import datetime, timedelta
 
 
 app = FastAPI()
@@ -88,3 +90,29 @@ def api_list_entries(
         )
 
     return response_entries
+
+
+@app.get("/insights/summary")
+def insights_summary(db: Session = Depends(get_db)):
+    # last 7 days
+    seven_days_ago = datetime.utcnow() - timedelta(days=7)
+
+    total_entries = db.query(func.count(EntryModel.id)).scalar() or 0
+
+    avg_sentiment_7d = (
+        db.query(func.avg(EntryModel.sentiment_score))
+        .filter(EntryModel.timestamp >= seven_days_ago)
+        .scalar()
+    )
+
+    avg_sentiment_today = (
+        db.query(func.avg(EntryModel.sentiment_score))
+        .filter(EntryModel.timestamp >= datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0))
+        .scalar()
+    )
+
+    return {
+        "total_entries": int(total_entries),
+        "avg_sentiment_7d": float(avg_sentiment_7d) if avg_sentiment_7d is not None else None,
+        "avg_sentiment_today": float(avg_sentiment_today) if avg_sentiment_today is not None else None,
+    }
