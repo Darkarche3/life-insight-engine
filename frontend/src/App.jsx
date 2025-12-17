@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
+import ReactMarkdown from "react-markdown";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000";
 
@@ -25,6 +26,7 @@ export default function App() {
   const [sentiment, setSentiment] = useState(0.5);
   const [tagsInput, setTagsInput] = useState("");
   const [status, setStatus] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const [search, setSearch] = useState("");
   const [tag, setTag] = useState("");
@@ -36,6 +38,11 @@ export default function App() {
 
   const [insights, setInsights] = useState(null);
   const [insightsError, setInsightsError] = useState("");
+
+  const [aiQuestion, setAiQuestion] = useState("");
+  const [aiAnswer, setAiAnswer] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState("");
 
   const queryString = useMemo(() => {
     const params = new URLSearchParams();
@@ -79,40 +86,74 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [queryString]);
 
+  async function askAi() {
+    const q = aiQuestion.trim();
+    if (!q) return;
+
+    setAiLoading(true);
+    setAiError("");
+    setAiAnswer("");
+
+    try {
+      const res = await fetch(`${API_BASE}/ai/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: q, limit: 25 }),
+      });
+
+      if (!res.ok) throw new Error(await res.text());
+
+      const data = await res.json();
+      setAiAnswer(data.answer || "");
+    } catch (e) {
+      setAiError(String(e?.message || e));
+    } finally {
+      setAiLoading(false);
+    }
+  }
+
   async function onSubmit(e) {
     e.preventDefault();
+    if (saving) return;
+
+    setSaving(true);
     setStatus("Saving...");
 
-    const tags = parseTags(tagsInput);
+    try {
+      const tags = parseTags(tagsInput);
 
-    const res = await fetch(`${API_BASE}/entries`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        content,
-        type,
-        tags,
-        sentiment_score: Number(sentiment),
-      }),
-    });
+      const res = await fetch(`${API_BASE}/entries`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content,
+          type,
+          tags,
+          sentiment_score: Number(sentiment),
+        }),
+      });
 
-    if (!res.ok) {
-      let detail = "Error saving entry.";
-      try {
-        const data = await res.json();
-        if (data?.detail) detail = data.detail;
-      } catch {
-        /* empty */
+      if (!res.ok) {
+        let detail = "Error saving entry.";
+        try {
+          const data = await res.json();
+          if (data?.detail) detail = data.detail;
+        } catch {
+          /* empty */
+        }
+        setStatus(detail);
+        return;
       }
-      setStatus(detail);
-      return;
-    }
 
-    setStatus("Saved!");
-    setContent("");
-    setTagsInput("");
-    await refresh();
-    await fetchInsights();
+      setStatus("Saved!");
+      setTimeout(() => setStatus(""), 2000);
+      setContent("");
+      setTagsInput("");
+      await refresh();
+      await fetchInsights();
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -158,6 +199,58 @@ export default function App() {
                         : Number(insights.avg_sentiment_today).toFixed(2)}
                     </div>
                   </div>
+                </div>
+              )}
+            </section>
+
+            <section className="card">
+              <h2>Ask your journal (AI)</h2>
+              <p className="small">Ask questions based on your saved entries.</p>
+
+              <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
+                <input
+                  value={aiQuestion}
+                  onChange={(e) => setAiQuestion(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") askAi();
+                  }}
+                  placeholder='e.g. "What have I been struggling with lately?"'
+                />
+
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button type="button" onClick={askAi} disabled={aiLoading}>
+                    {aiLoading ? "Thinking..." : "Ask"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAiQuestion("");
+                      setAiAnswer("");
+                      setAiError("");
+                    }}
+                    disabled={aiLoading && !aiError}
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+
+              {aiError && (
+                <div className="small" style={{ marginTop: 10 }}>
+                  Error: {aiError}
+                </div>
+              )}
+
+              {aiAnswer && (
+                <div
+                  style={{
+                    marginTop: 12,
+                    maxHeight: 220,
+                    overflowY: "auto",
+                  }}
+                >
+                  <ReactMarkdown>{aiAnswer}</ReactMarkdown>
                 </div>
               )}
             </section>
@@ -209,11 +302,13 @@ export default function App() {
                   />
                 </label>
 
-                <button type="submit">Save Entry</button>
+                <button type="submit" disabled={saving}>
+                  {saving ? "Saving..." : "Save Entry"}
+                </button>
+
                 <p className="status">{status}</p>
               </form>
             </section>
-
           </div>
 
           <div className="rightCol">

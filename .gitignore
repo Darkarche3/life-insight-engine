@@ -1,45 +1,40 @@
-# ---- Python ----
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# ---- Virtual Environment ----
-venv/
-.env/
-.env.*
-
-# ---- SQLite Database ----
-*.db
-
-# ---- VS Code ----
-.vscode/
-
-# ---- OS Files ----
+############################
+# Global / OS
+############################
 .DS_Store
 Thumbs.db
+*.log
 
-# ---- Python packaging/build ----
+############################
+# Python / Backend
+############################
+# Bytecode
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+venv/
+.venv/
+
+# Environment variables
+backend/.env
+
+# SQLite database
+backend/*.db
+
+# Python build artifacts
 build/
 dist/
 *.egg-info/
 
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.venv/
-venv/
-.env
-*.log
-
-# SQLite DB (choose one approach)
-life_insights.db
-*.db
-
-# Frontend
+############################
+# Frontend (React + Vite)
+############################
 frontend/node_modules/
 frontend/dist/
 frontend/.env
 
+############################
+# Editor / IDE
+############################
+.vscode/

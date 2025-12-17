@@ -9,7 +9,11 @@ from typing import List
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import func
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
+from services.ai_chat import chat_with_journal
 
+
+load_dotenv()
 
 app = FastAPI()
 app.add_middleware(
@@ -116,3 +120,14 @@ def insights_summary(db: Session = Depends(get_db)):
         "avg_sentiment_7d": float(avg_sentiment_7d) if avg_sentiment_7d is not None else None,
         "avg_sentiment_today": float(avg_sentiment_today) if avg_sentiment_today is not None else None,
     }
+
+@app.post("/ai/chat")
+def ai_chat(payload: dict, db: Session = Depends(get_db)):
+    question = (payload.get("question") or "").strip()
+    limit = int(payload.get("limit") or 25)
+
+    if not question:
+        raise HTTPException(status_code=400, detail="Question is required.")
+
+    return chat_with_journal(db=db, question=question, limit=limit)
+
